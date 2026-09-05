@@ -144,8 +144,55 @@ namespace Piml.Internal
                     return arr;
                 }
                 default:
-                    throw Err(first, "Multi-line strings are not supported yet."); // replaced in Task 7
+                    return ParseMultiline(parentIndent, span);
             }
+        }
+
+        // ---- multi-line strings ----
+
+        private PimlNode ParseMultiline(int parentIndent, SpanNode? span)
+        {
+            int baseIndent = parentIndent + 2;
+            var sb = new StringBuilder();
+            bool first = true;
+            int lastContent = -1;
+
+            while (_pos < _lines.Count)
+            {
+                var line = _lines[_pos];
+                if (line.Kind == LineKind.Comment) { _pos++; continue; }            // dropped, never ends the block
+                if (line.Kind == LineKind.Blank)
+                {
+                    if (!first) sb.Append('\n');                                       // interior blank → empty line
+                    _pos++;
+                    continue;
+                }
+                if (line.Indent <= parentIndent) break;                                // block ends
+                if (line.Indent < baseIndent)
+                    throw Err(line, "Multi-line string content is indented less than the block's base indentation.");
+
+                sb.Append(UnescapeContentLine(line.Raw.Substring(baseIndent), first)).Append('\n');
+                first = false;
+                lastContent = _pos;
+                _pos++;
+            }
+
+            if (span != null) span.EndLine = lastContent;
+            return new PimlString(sb.ToString().TrimEnd());
+        }
+
+        /// <summary>Removes the positional escapes of spec 3.4: a leading \# on any line, \( or \&gt; on the first line.</summary>
+        private static string UnescapeContentLine(string content, bool firstLine)
+        {
+            int i = 0;
+            while (i < content.Length && content[i] == ' ') i++;
+            if (i + 1 < content.Length && content[i] == '\\')
+            {
+                char n = content[i + 1];
+                if (n == '#' || (firstLine && (n == '(' || n == '>')))
+                    return content.Substring(0, i) + content.Substring(i + 1);
+            }
+            return content;
         }
 
         // ---- arrays ----
