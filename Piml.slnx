@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Piml/Piml.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Piml.Tests/Piml.Tests.csproj" />
+  </Folder>
+</Solution>

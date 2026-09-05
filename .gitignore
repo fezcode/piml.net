@@ -1,0 +1,17 @@
+bin/
+obj/
+out/
+artifacts/
+TestResults/
+*.user
+*.suo
+*.swp
+.vs/
+.vscode/
+.idea/
+*.DotSettings.user
+*.nupkg
+*.snupkg
+.DS_Store
+Thumbs.db
+*.stackdump

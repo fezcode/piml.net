@@ -1,0 +1,11 @@
+<Project>
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <Company>fezcode</Company>
+    <Authors>Samil Bulbul</Authors>
+    <Copyright>Copyright (c) 2026 fezcode (Samil Bulbul)</Copyright>
+    <Product>piml.net</Product>
+  </PropertyGroup>
+</Project>
