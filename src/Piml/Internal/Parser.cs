@@ -101,7 +101,10 @@ namespace Piml.Internal
             if (hasInlineValue)
             {
                 if (hasBlock)
+                {
+                    if (_lines[next].Indent != line.Indent + 2) throw Err(_lines[next], IndentMessage(_lines[next]));
                     throw Err(_lines[next], "Key '" + key + "' has an inline value and cannot also have an indented block.");
+                }
                 node = ScalarParser.Parse(rest);
             }
             else if (!hasBlock)
@@ -134,10 +137,90 @@ namespace Piml.Internal
                     return obj;
                 }
                 case LineKind.Item:
-                    throw Err(first, "Arrays are not supported yet."); // replaced in Task 6
+                {
+                    var arr = new PimlArray();
+                    if (span != null) span.Items = new List<SpanNode>();
+                    ParseArrayBody(arr, level, span);
+                    return arr;
+                }
                 default:
                     throw Err(first, "Multi-line strings are not supported yet."); // replaced in Task 7
             }
+        }
+
+        // ---- arrays ----
+
+        private void ParseArrayBody(PimlArray arr, int level, SpanNode? span)
+        {
+            int expected = level * 2;
+            while (true)
+            {
+                int i = NextSignificant(_pos);
+                if (i < 0) { _pos = _lines.Count; return; }
+                var line = _lines[i];
+                if (line.Indent < expected) { _pos = i; return; }
+                if (line.Indent > expected) throw Err(line, IndentMessage(line));
+                if (line.Kind != LineKind.Item)
+                    throw Err(line, line.Kind == LineKind.Key
+                        ? "A (key) is not allowed inside an array."
+                        : "Expected an array item starting with '>'.");
+                _pos = i + 1;
+                arr.Add(ParseItem(line, level, span));
+            }
+        }
+
+        private PimlNode ParseItem(Line line, int level, SpanNode? parentSpan)
+        {
+            var rest = line.Text.Substring(1);
+
+            SpanNode? span = null;
+            if (parentSpan != null)
+            {
+                span = new SpanNode { HeadLine = line.Index, EndLine = line.Index, Indent = line.Indent };
+                parentSpan.Items!.Add(span);
+            }
+
+            int next = NextSignificant(_pos);
+            bool hasBlock = next >= 0 && _lines[next].Indent > line.Indent;
+
+            var trimmed = rest.Trim();
+            int hash = ScalarParser.FindInlineComment(trimmed);
+            var valueText = hash >= 0 ? trimmed.Substring(0, hash).TrimEnd() : trimmed;
+            bool hasInlineValue = valueText.Length > 0 && valueText[0] != '#';
+
+            PimlNode node;
+            if (hasInlineValue && hasBlock && IsLabel(valueText))
+            {
+                // "> (label)" — the label is metadata; the block is the item.
+                node = ParseBlock(line.Indent, level + 1, span);
+            }
+            else if (hasInlineValue)
+            {
+                if (hasBlock)
+                {
+                    if (_lines[next].Indent != line.Indent + 2) throw Err(_lines[next], IndentMessage(_lines[next]));
+                    throw Err(_lines[next], "An array item with an inline value cannot also have an indented block.");
+                }
+                node = ScalarParser.Parse(rest);
+            }
+            else if (!hasBlock)
+            {
+                node = PimlNull.Instance;
+            }
+            else
+            {
+                node = ParseBlock(line.Indent, level + 1, span);
+            }
+
+            if (parentSpan != null && span!.EndLine > parentSpan.EndLine) parentSpan.EndLine = span.EndLine;
+            return node;
+        }
+
+        /// <summary>True for "(label)" — one pair of parentheses wrapping the whole value.</summary>
+        private static bool IsLabel(string value)
+        {
+            if (value.Length < 3 || value[0] != '(' || value[value.Length - 1] != ')') return false;
+            return value.IndexOf(')') == value.Length - 1 && value.IndexOf('(', 1) < 0;
         }
     }
 }
