@@ -16,5 +16,8 @@ namespace Piml
             if (text == null) throw new ArgumentNullException(nameof(text));
             return Parser.Parse(LineScanner.Scan(text), null);
         }
+
+        /// <summary>Writes an object tree as canonical PIML text.</summary>
+        public static string Write(PimlObject root, PimlWriterOptions? options = null) => PimlWriter.Write(root, options);
     }
 }

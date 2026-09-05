@@ -68,6 +68,17 @@ public class ComplianceTests
         Assert.Throws<PimlSyntaxException>(() => Piml.Parse(tc.Piml));
     }
 
+    [Theory]
+    [MemberData(nameof(ParseCaseNames))]
+    public void Round_trips_through_the_writer(string name)
+    {
+        var tc = Find(Suite.Value.Tests, name);
+        var expected = Normalize(tc.Json);
+        var written = Piml.Write(Piml.Parse(tc.Piml));
+        var again = Normalize(Piml.Parse(written));
+        Assert.True(DeepEqual(expected, again), $"round-trip mismatch for '{name}'\nwritten:\n{written}\nexpected: {Describe(expected)}\nactual:   {Describe(again)}");
+    }
+
     // ---- normalization: both sides become null/bool/long/double/string/List/Dictionary ----
 
     public static object? Normalize(JsonElement e) => e.ValueKind switch
