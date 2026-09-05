@@ -19,5 +19,15 @@ namespace Piml
 
         /// <summary>Writes an object tree as canonical PIML text.</summary>
         public static string Write(PimlObject root, PimlWriterOptions? options = null) => PimlWriter.Write(root, options);
+
+        /// <summary>Serializes an object graph to PIML text. The value must map to an object (not a scalar or list).</summary>
+        public static string Serialize<T>(T value, PimlSerializerOptions? options = null)
+        {
+            var o = options ?? PimlSerializerOptions.Default;
+            var node = PimlSerializer.ToNode(value, o);
+            if (!(node is PimlObject root))
+                throw new PimlException("The root value must serialize to an object; got " + node.Kind + ".");
+            return PimlWriter.Write(root, o.Writer);
+        }
     }
 }
