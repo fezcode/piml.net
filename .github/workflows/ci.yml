@@ -1,0 +1,42 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: piml.net
+      - uses: actions/checkout@v4
+        with:
+          repository: fezcode/piml
+          path: piml
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: piml.net/global.json
+      - name: Restore
+        run: dotnet restore piml.net/Piml.sln
+      - name: Build
+        run: dotnet build piml.net/Piml.sln -c Release --no-restore
+      - name: Test
+        run: dotnet test piml.net/Piml.sln -c Release --no-build --logger "trx;LogFileName=results.trx"
+        env:
+          PIML_COMPLIANCE: ${{ github.workspace }}/piml/tests/compliance.json
+      - name: Pack
+        if: matrix.os == 'ubuntu-latest'
+        run: dotnet pack piml.net/src/Piml/Piml.csproj -c Release --no-build -o piml.net/artifacts
+      - uses: actions/upload-artifact@v4
+        if: matrix.os == 'ubuntu-latest'
+        with:
+          name: nupkg
+          path: piml.net/artifacts/*.nupkg
