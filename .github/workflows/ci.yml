@@ -25,11 +25,11 @@ jobs:
         with:
           global-json-file: piml.net/global.json
       - name: Restore
-        run: dotnet restore piml.net/Piml.sln
+        run: dotnet restore piml.net/Piml.slnx
       - name: Build
-        run: dotnet build piml.net/Piml.sln -c Release --no-restore
+        run: dotnet build piml.net/Piml.slnx -c Release --no-restore
       - name: Test
-        run: dotnet test piml.net/Piml.sln -c Release --no-build --logger "trx;LogFileName=results.trx"
+        run: dotnet test piml.net/Piml.slnx -c Release --no-build --logger "trx;LogFileName=results.trx"
         env:
           PIML_COMPLIANCE: ${{ github.workspace }}/piml/tests/compliance.json
       - name: Pack
