@@ -41,5 +41,8 @@ namespace Piml
         /// <summary>Non-generic form of <see cref="Deserialize{T}"/>.</summary>
         public static object? Deserialize(string text, Type type, PimlSerializerOptions? options = null) =>
             PimlSerializer.FromNode(Parse(text), type, options);
+
+        /// <summary>Parses text into a <see cref="PimlDocument"/> that can be edited and written back without losing comments or formatting.</summary>
+        public static PimlDocument ParseDocument(string text) => PimlDocument.Parse(text);
     }
 }
